@@ -14,11 +14,29 @@ defmodule CounterWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :require_auth do
+    plug CounterWeb.Plugs.RequireAuth
+  end
+
   scope "/", CounterWeb do
     pipe_through :browser
 
-    # get "/", PageController, :home
+    live "/login", LoginLive
+  end
+
+  scope "/", CounterWeb do
+    pipe_through [:browser, :require_auth]
+
     live "/", CounterLive
+  end
+
+  scope "/auth", CounterWeb do
+    pipe_through :browser
+
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
+    post "/:provider/callback", AuthController, :callback
+    delete "/logout", AuthController, :logout
   end
 
   # Other scopes may use custom stacks.

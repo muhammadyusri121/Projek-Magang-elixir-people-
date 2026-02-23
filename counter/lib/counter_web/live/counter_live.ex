@@ -2,9 +2,12 @@ defmodule CounterWeb.CounterLive do
   use CounterWeb, :live_view
   alias Counter.History
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
+    current_user = session["current_user"]
+
     {:ok,
      assign(socket,
+       current_user: current_user,
        name: "",
        val: 0,
        logs: History.list_logs(),
@@ -20,27 +23,56 @@ defmodule CounterWeb.CounterLive do
       <section class="counter-page">
         <div class="counter-glow"></div>
         <div class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+          <div class="mb-4 flex justify-end">
+            <%= if @current_user do %>
+              <div class="flex items-center gap-3">
+                <img
+                  src={@current_user.avatar}
+                  alt="Avatar"
+                  class="h-8 w-8 rounded-full border border-gray-600"
+                />
+                <span class="text-sm text-gray-300">Halo, {@current_user.name}</span>
+                <.link
+                  href={~p"/auth/logout"}
+                  method="delete"
+                  class="text-xs text-red-400 hover:text-red-300"
+                >
+                  Logout
+                </.link>
+              </div>
+            <% else %>
+              <.link
+                href={~p"/auth/google"}
+                class="rounded bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+              >
+                Login dengan Google
+              </.link>
+            <% end %>
+          </div>
+
           <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p class="counter-tag">Counter Playground</p>
               <h1 class="counter-title">First Project Phoenix</h1>
-              <p class="counter-subtitle">Simpan skor, kelola riwayat, dan pantau update secara realtime.</p>
+              <p class="counter-subtitle">
+                Simpan skor, kelola riwayat, dan pantau update secara realtime.
+              </p>
             </div>
-            <div class="counter-badge">Records: <%= length(@logs) %></div>
+            <div class="counter-badge">Records: {length(@logs)}</div>
           </div>
 
           <div class="mb-5 grid gap-3 sm:grid-cols-3">
             <article class="counter-mini-card">
               <p class="counter-mini-label">Nilai Aktif</p>
-              <p class="counter-mini-value"><%= @val %></p>
+              <p class="counter-mini-value">{@val}</p>
             </article>
             <article class="counter-mini-card">
               <p class="counter-mini-label">Nama Aktif</p>
-              <p class="counter-mini-value-small"><%= if @name == "", do: "-", else: @name %></p>
+              <p class="counter-mini-value-small">{if @name == "", do: "-", else: @name}</p>
             </article>
             <article class="counter-mini-card">
               <p class="counter-mini-label">Mode</p>
-              <p class="counter-mini-value-small"><%= if @editing_id, do: "Editing", else: "Create" %></p>
+              <p class="counter-mini-value-small">{if @editing_id, do: "Editing", else: "Create"}</p>
             </article>
           </div>
 
@@ -49,7 +81,13 @@ defmodule CounterWeb.CounterLive do
               <%= if @editing_id do %>
                 <.form for={%{}} id="edit-log-form" phx-change="edit_change" phx-submit="update_log">
                   <label class="counter-label" for="edit-name">Edit Nama</label>
-                  <input id="edit-name" name="name" type="text" value={@edit_name} class="counter-input" />
+                  <input
+                    id="edit-name"
+                    name="name"
+                    type="text"
+                    value={@edit_name}
+                    class="counter-input"
+                  />
 
                   <label class="counter-label" for="edit-count">Edit Nilai</label>
                   <input
@@ -63,12 +101,18 @@ defmodule CounterWeb.CounterLive do
 
                   <div class="counter-board">
                     <p class="counter-board-title">Preview Nilai</p>
-                    <div class="counter-number"><%= @edit_count %></div>
+                    <div class="counter-number">{@edit_count}</div>
                   </div>
 
                   <div class="grid grid-cols-2 gap-3">
                     <button type="submit" class="counter-btn counter-btn-success">Update</button>
-                    <button type="button" phx-click="cancel_edit" class="counter-btn counter-btn-primary">Batal</button>
+                    <button
+                      type="button"
+                      phx-click="cancel_edit"
+                      class="counter-btn counter-btn-primary"
+                    >
+                      Batal
+                    </button>
                   </div>
                 </.form>
               <% else %>
@@ -84,7 +128,7 @@ defmodule CounterWeb.CounterLive do
 
                 <div class="counter-board">
                   <p class="counter-board-title">Nilai Saat Ini</p>
-                  <div class="counter-number"><%= @val %></div>
+                  <div class="counter-number">{@val}</div>
                 </div>
 
                 <div class="grid grid-cols-4 gap-3">
@@ -104,18 +148,20 @@ defmodule CounterWeb.CounterLive do
 
               <div class="counter-log-list">
                 <%= if Enum.empty?(@logs) do %>
-                  <div class="counter-empty">Belum ada data. Simpan nilai pertama untuk memulai riwayat.</div>
+                  <div class="counter-empty">
+                    Belum ada data. Simpan nilai pertama untuk memulai riwayat.
+                  </div>
                 <% end %>
 
                 <%= for log <- @logs do %>
                   <div class="counter-item group">
                     <div class="flex flex-col">
-                      <span class="counter-item-name"><%= log.name %></span>
-                      <span class="counter-item-time"><%= format_timestamp(log.inserted_at) %></span>
+                      <span class="counter-item-name">{log.name}</span>
+                      <span class="counter-item-time">{format_timestamp(log.inserted_at)}</span>
                     </div>
 
                     <div class="flex items-center gap-2">
-                      <span class="counter-item-value"><%= log.count %></span>
+                      <span class="counter-item-value">{log.count}</span>
                       <div class="counter-item-actions">
                         <button
                           phx-click="start_edit"
